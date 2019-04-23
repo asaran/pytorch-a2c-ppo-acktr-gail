@@ -13,6 +13,8 @@ from baselines.common.vec_env.shmem_vec_env import ShmemVecEnv
 from baselines.common.vec_env.vec_normalize import \
     VecNormalize as VecNormalize_
 
+import gym_tabletop
+
 try:
     import dm_control2gym
 except ImportError:
