@@ -41,6 +41,8 @@ def main():
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False)
 
+    # print(envs.observation_space.shape)
+    # print(envs.action_space)
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -92,6 +94,7 @@ def main():
                               actor_critic.recurrent_hidden_state_size)
 
     obs = envs.reset()
+    # print(obs)
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
@@ -114,12 +117,16 @@ def main():
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step], rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])
+                # print(value, action, action_log_prob, recurrent_hidden_states)
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
+            # print(action)
+            # 
 
             for info in infos:
                 if 'episode' in info.keys():
+                    # print(info['episode'])
                     episode_rewards.append(info['episode']['r'])
 
             # If done then clean the history of observations.
@@ -171,14 +178,15 @@ def main():
             torch.save([
                 actor_critic,
                 getattr(utils.get_vec_normalize(envs), 'ob_rms', None)
-            ], os.path.join(save_path, args.env_name + ".pt"))
+            ], os.path.join(save_path, args.env_name + "_" + str(j) +".pt"))
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
             total_num_steps = (j + 1) * args.num_processes * args.num_steps
             end = time.time()
             print(
-                "Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}\n"
-                .format(j, total_num_steps,
+                "Updates {}/{}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}, \
+                dist_entropy:{:.1f}, value_loss: {:.1f}, action_loss: {:.1f}\n"
+                .format(j, num_updates, total_num_steps,
                         int(total_num_steps / (end - start)),
                         len(episode_rewards), np.mean(episode_rewards),
                         np.median(episode_rewards), np.min(episode_rewards),

@@ -42,15 +42,19 @@ env = make_vec_envs(
     1,
     None,
     None,
-    device='cpu',
+    device='cuda',
     allow_early_resets=False)
 
 # Get a render function
 render_func = get_render_func(env)
+# print(render_func)
 
 # We need to use the same statistics for normalization as used in training
+# actor_critic, ob_rms = \
+#             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+
 actor_critic, ob_rms = \
-            torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+            torch.load(os.path.join(args.load_dir))
 
 vec_norm = get_vec_normalize(env)
 if vec_norm is not None:
@@ -79,8 +83,10 @@ while True:
         value, action, _, recurrent_hidden_states = actor_critic.act(
             obs, recurrent_hidden_states, masks, deterministic=args.det)
 
+    # print(action)
     # Obser reward and next obs
     obs, reward, done, _ = env.step(action)
+    # print(done)
 
     masks.fill_(0.0 if done else 1.0)
 
