@@ -44,8 +44,6 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets):
 
         env.seed(seed + rank)
 
-        obs_shape = env.observation_space.shape
-
         if str(env.__class__.__name__).find('TimeLimit') >= 0:
             env = TimeLimitMask(env)
 
@@ -125,7 +123,7 @@ class TimeLimitMask(gym.Wrapper):
 class MaskGoal(gym.ObservationWrapper):
     def observation(self, observation):
         if self.env._elapsed_steps > 0:
-            observation[-2:0] = 0
+            observation[-2:] = 0
         return observation
 
 
@@ -143,7 +141,7 @@ class TransposeImage(TransposeObs):
         Transpose observation space for images
         """
         super(TransposeImage, self).__init__(env)
-        assert len(op) == 3, f"Error: Operation, {str(op)}, must be dim3"
+        assert len(op) == 3, "Error: Operation, " + str(op) + ", must be dim3"
         self.op = op
         obs_shape = self.observation_space.shape
         self.observation_space = Box(
@@ -232,7 +230,7 @@ class VecPyTorchFrameStack(VecEnvWrapper):
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
         self.stacked_obs[:, :-self.shape_dim0] = \
-            self.stacked_obs[:, self.shape_dim0:]
+            self.stacked_obs[:, self.shape_dim0:].clone()
         for (i, new) in enumerate(news):
             if new:
                 self.stacked_obs[i] = 0
